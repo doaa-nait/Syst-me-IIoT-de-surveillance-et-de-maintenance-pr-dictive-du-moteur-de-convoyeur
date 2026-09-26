@@ -1,1 +1,1 @@
-Dossier initialisé
+Flux Node-RED pour l'interface utilisateur

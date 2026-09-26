@@ -1,1 +1,1 @@
-Dossier initialisé
+Configuration du serveur MQTT Mosquitto

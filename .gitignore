@@ -1,0 +1,7 @@
+firmware/include/secrets.h
+broker/passwd
+dashboard/flows_cred.json
+.env
+.pio/
+node_modules/
+__pycache__/

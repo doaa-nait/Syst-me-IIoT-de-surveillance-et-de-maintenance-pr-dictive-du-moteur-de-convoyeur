@@ -80,7 +80,10 @@
     [ "esp:19", "r3:2", "green", [ "h0" ] ],
     [ "r3:1", "led2:A", "green", [ "v0" ] ],
     [ "esp:23", "r1:2", "green", [ "h0" ] ],
-    [ "r1:1", "led1:A", "green", [ "v0" ] ]
-  ],
+    [ "r1:1", "led1:A", "green", [ "v0" ] ],
+    [ "led1:C", "esp:GND.1", "black", [] ],
+    [ "led2:C", "esp:GND.1", "black", [] ],
+    [ "led3:C", "esp:GND.1", "black", [] ]
+  ]
   "dependencies": {}
 }

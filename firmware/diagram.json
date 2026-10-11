@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "author": "Anonymous maker",
+  "author": "Doaa Nait",
   "editor": "wokwi",
   "parts": [
     { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -19.2, "left": -398.36, "attrs": {} },
@@ -47,14 +47,14 @@
       "id": "r2",
       "top": 42.35,
       "left": 259.2,
-      "attrs": { "value": "1000" }
+      "attrs": { "value": "220" }
     },
     {
       "type": "wokwi-resistor",
       "id": "r3",
       "top": 109.55,
       "left": 259.2,
-      "attrs": { "value": "1000" }
+      "attrs": { "value": "220" }
     },
     { "type": "wokwi-slide-switch", "id": "sw1", "top": -206.8, "left": 262.3, "attrs": {} }
   ],
@@ -80,7 +80,10 @@
     [ "esp:19", "r3:2", "green", [ "h0" ] ],
     [ "r3:1", "led2:A", "green", [ "v0" ] ],
     [ "esp:23", "r1:2", "green", [ "h0" ] ],
-    [ "r1:1", "led1:A", "green", [ "v0" ] ]
+    [ "r1:1", "led1:A", "green", [ "v0" ] ],
+    [ "led1:C", "esp:GND.1", "black", [] ],
+    [ "led2:C", "esp:GND.1", "black", [] ],
+    [ "led3:C", "esp:GND.1", "black", [] ]
   ],
   "dependencies": {}
 }

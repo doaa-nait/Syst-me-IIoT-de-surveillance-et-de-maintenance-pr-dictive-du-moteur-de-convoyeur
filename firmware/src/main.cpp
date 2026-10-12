@@ -3,6 +3,9 @@
 #include <DHT.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
+#include <WiFi.h>          
+#include <PubSubClient.h>  
+#include "secrets.h"       
 
 // ---------- Broches (identiques au diagram.json) ----------
 const int PIN_DHT    = 4;   // DHT22 : fil de données

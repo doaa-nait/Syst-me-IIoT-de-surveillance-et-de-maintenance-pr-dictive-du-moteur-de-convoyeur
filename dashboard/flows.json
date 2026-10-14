@@ -1,0 +1,468 @@
+[
+    {
+        "id": "eb5b92fc089d4a2f",
+        "type": "tab",
+        "label": "Flux 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "7b45ca8565dc1ce4",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "localhost",
+        "port": 1883,
+        "clientid": "nodered-supervision",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "ee69eb854e1a2576",
+        "type": "ui-base",
+        "name": "My Dashboard",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "default",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": 1,
+        "showDisconnectNotification": true,
+        "allowInstall": false
+    },
+    {
+        "id": "1484f2867c7507cd",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#fcfcfd",
+            "primary": "#0d74ce",
+            "bgPage": "#f9f9fb",
+            "groupBg": "#ffffff",
+            "groupOutline": "#d9d9e0"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "358e7ca21507e450",
+        "type": "ui-page",
+        "name": "Page 1",
+        "ui": "ee69eb854e1a2576",
+        "path": "/page1",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "1484f2867c7507cd",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "tabs": [],
+        "order": 1,
+        "className": "",
+        "visible": true,
+        "disabled": false
+    },
+    {
+        "id": "bbba88cc3cb1e932",
+        "type": "ui-group",
+        "name": "Group 1",
+        "page": "358e7ca21507e450",
+        "width": 6,
+        "height": 1,
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default",
+        "tab": ""
+    },
+    {
+        "id": "e74177635312e198",
+        "type": "mqtt in",
+        "z": "eb5b92fc089d4a2f",
+        "name": "",
+        "topic": "usine/ligne1/convoyeur1/capteur/+",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "7b45ca8565dc1ce4",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 140,
+        "y": 140,
+        "wires": [
+            [
+                "493ed397e66cbfbc"
+            ]
+        ]
+    },
+    {
+        "id": "ce023de42e988f14",
+        "type": "debug",
+        "z": "eb5b92fc089d4a2f",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "493ed397e66cbfbc",
+        "type": "function",
+        "z": "eb5b92fc089d4a2f",
+        "name": "validation",
+        "func": "// Validation des mesures reçues (défense en profondeur)\nconst PLAGES = {\n    temperature: { min: -40, max: 80 },   // limites physiques du DHT22\n    vibration: { min: 0, max: 30 }\n};\nconst capteur = msg.topic.split('/').pop();   // \"temperature\" ou \"vibration\"\nconst plage = PLAGES[capteur];\nconst d = msg.payload;\n\nlet erreur = null;\nif (!plage) erreur = \"capteur inconnu\";\nelse if (typeof d !== 'object' || d === null) erreur = \"format invalide (JSON attendu)\";\nelse if (d.qualite && d.qualite !== 'OK') erreur = \"capteur en défaut : \" + d.qualite;\nelse if (typeof d.valeur !== 'number' || isNaN(d.valeur)) erreur = \"valeur non numérique\";\nelse if (d.valeur < plage.min || d.valeur > plage.max) erreur = \"hors plage plausible\";\n\nif (erreur) {\n    node.warn(`Mesure rejetée (${capteur}) : ${erreur}`);\n    return [null, { payload: { capteur, erreur, recu: d, date: new Date().toISOString() } }];\n}\nmsg.topic = capteur;        // sert plus tard à nommer les courbes\nmsg.payload = d.valeur;     // les widgets du dashboard attendent un nombre\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 140,
+        "wires": [
+            [
+                "ce023de42e988f14",
+                "91de6b572e230871"
+            ],
+            [
+                "022f6ef6e862ded4"
+            ]
+        ]
+    },
+    {
+        "id": "022f6ef6e862ded4",
+        "type": "debug",
+        "z": "eb5b92fc089d4a2f",
+        "name": "rejets",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "91de6b572e230871",
+        "type": "switch",
+        "z": "eb5b92fc089d4a2f",
+        "name": "Aiguillage",
+        "property": "topic",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "temperature",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "vibration",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 580,
+        "y": 100,
+        "wires": [
+            [
+                "c058510877a56574",
+                "8dca65c8bf4b5f76"
+            ],
+            [
+                "de1d892b9287c91a",
+                "8dca65c8bf4b5f76"
+            ]
+        ]
+    },
+    {
+        "id": "c058510877a56574",
+        "type": "ui-gauge",
+        "z": "eb5b92fc089d4a2f",
+        "name": "temperature",
+        "group": "bbba88cc3cb1e932",
+        "order": 3,
+        "value": "payload",
+        "valueType": "msg",
+        "width": 3,
+        "height": 3,
+        "gtype": "gauge-half",
+        "gstyle": "needle",
+        "title": "Température",
+        "alwaysShowTitle": false,
+        "floatingTitlePosition": "top-left",
+        "units": "°C",
+        "icon": "",
+        "prefix": "",
+        "suffix": "",
+        "segments": [
+            {
+                "from": "0",
+                "color": "#5cd65c",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "60",
+                "color": "#ffc800",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "70",
+                "color": "#ea5353",
+                "text": "",
+                "textType": "label"
+            }
+        ],
+        "min": 0,
+        "max": "80",
+        "sizeThickness": 16,
+        "sizeGap": 4,
+        "sizeKeyThickness": 8,
+        "styleRounded": true,
+        "styleGlow": false,
+        "className": "",
+        "x": 790,
+        "y": 20,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "de1d892b9287c91a",
+        "type": "ui-gauge",
+        "z": "eb5b92fc089d4a2f",
+        "name": "vibration",
+        "group": "bbba88cc3cb1e932",
+        "order": 2,
+        "value": "payload",
+        "valueType": "msg",
+        "width": 3,
+        "height": 3,
+        "gtype": "gauge-half",
+        "gstyle": "needle",
+        "title": "vibration",
+        "alwaysShowTitle": false,
+        "floatingTitlePosition": "top-left",
+        "units": "m/s²",
+        "icon": "",
+        "prefix": "",
+        "suffix": "",
+        "segments": [
+            {
+                "from": "0",
+                "color": "#5cd65c",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "3",
+                "color": "#ffc800",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "6",
+                "color": "#ea5353",
+                "text": "",
+                "textType": "label"
+            }
+        ],
+        "min": 0,
+        "max": 10,
+        "sizeThickness": 16,
+        "sizeGap": 4,
+        "sizeKeyThickness": 8,
+        "styleRounded": true,
+        "styleGlow": false,
+        "className": "",
+        "x": 780,
+        "y": 60,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8dca65c8bf4b5f76",
+        "type": "ui-chart",
+        "z": "eb5b92fc089d4a2f",
+        "group": "bbba88cc3cb1e932",
+        "name": "",
+        "label": "historique",
+        "order": 4,
+        "chartType": "line",
+        "category": "topic",
+        "categoryType": "msg",
+        "xAxisLabel": "",
+        "xAxisProperty": "",
+        "xAxisPropertyType": "timestamp",
+        "xAxisType": "time",
+        "xAxisFormat": "",
+        "xAxisFormatType": "auto",
+        "xmin": "",
+        "xmax": "",
+        "yAxisLabel": "",
+        "yAxisProperty": "payload",
+        "yAxisPropertyType": "msg",
+        "ymin": "0",
+        "ymax": "80",
+        "bins": 10,
+        "action": "append",
+        "stackSeries": false,
+        "pointShape": "circle",
+        "pointRadius": 4,
+        "showLegend": true,
+        "removeOlder": 1,
+        "removeOlderUnit": "3600",
+        "removeOlderPoints": "",
+        "colors": [
+            "#0095ff",
+            "#ff0000",
+            "#ff7f0e",
+            "#2ca02c",
+            "#a347e1",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "textColor": [
+            "#666666"
+        ],
+        "textColorDefault": true,
+        "gridColor": [
+            "#e5e5e5"
+        ],
+        "gridColorDefault": true,
+        "width": 6,
+        "height": 8,
+        "className": "",
+        "interpolation": "linear",
+        "x": 780,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "303b08d03bdaa511",
+        "type": "mqtt in",
+        "z": "eb5b92fc089d4a2f",
+        "name": "",
+        "topic": "usine/ligne1/convoyeur1/etat/connexion",
+        "qos": "0",
+        "datatype": "base64",
+        "broker": "7b45ca8565dc1ce4",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 380,
+        "wires": [
+            [
+                "728b54a2fc721ea4"
+            ]
+        ]
+    },
+    {
+        "id": "728b54a2fc721ea4",
+        "type": "ui-text",
+        "z": "eb5b92fc089d4a2f",
+        "group": "bbba88cc3cb1e932",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "ESP32",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 450,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "a69438ea607cd974",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "@flowfuse/node-red-dashboard": "1.33.0"
+        }
+    }
+]

@@ -3,18 +3,17 @@
 #include <DHT.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
-#include <WiFi.h>          
-#include <PubSubClient.h>  
-#include "secrets.h"       
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include "secrets.h"
 
-// ---------- Broches (identiques au diagram.json) ----------
-const int PIN_DHT    = 4;   // DHT22 : fil de données
-const int PIN_RELAIS = 26;  // relais : HIGH = moteur en marche
+const int PIN_DHT    = 4;
+const int PIN_RELAIS = 26;
 const int PIN_BUZZER = 27;
 const int LED_VERTE  = 18;
 const int LED_JAUNE  = 19;
 const int LED_ROUGE  = 23;
-const int PIN_INTER  = 33;  // interrupteur de test (utilisé à l'étape 4)
+const int PIN_INTER  = 33;
 
 // ---------- Valeurs du cahier des charges ----------
 const unsigned long PERIODE_MS = 2000;       // période de mesure
@@ -32,6 +31,16 @@ const char* NOM_NIVEAU[]  = {"NORMAL", "ALERTE", "CRITIQUE", "SECURITE"};
 
 DHT dht(PIN_DHT, DHT22);
 Adafruit_MPU6050 mpu;
+WiFiClient wifiClient;
+PubSubClient mqtt(wifiClient);
+
+const char* TOPIC_TEMP = "usine/ligne1/convoyeur1/capteur/temperature";
+const char* TOPIC_VIB  = "usine/ligne1/convoyeur1/capteur/vibration";
+const char* TOPIC_ETAT = "usine/ligne1/convoyeur1/etat/connexion";
+const char* TOPIC_CMD  = "usine/ligne1/convoyeur1/cmd/relais";
+
+unsigned long dernierEssaiMqtt = 0;
+unsigned long seq = 0;           // numéro de chaque mesure publiée
 
 bool  mpuOk = false;
 float gRepos = 9.81;
@@ -121,7 +130,7 @@ void appliquerSignalisation() {
   buzzerActif = doitSonner;
 }
 
-// ---------- 5. Commandes (ici au clavier ; à l'étape 4 : par MQTT) ----------
+// ---------- 5. Commandes (clavier ou MQTT, mêmes règles) ----------
 void traiterCommande(String cmd) {
   cmd.trim();
   cmd.toUpperCase();
@@ -154,6 +163,32 @@ void lireCommandeSerie() {             // lecture caractère par caractère, san
   }
 }
 
+// ---------- 6. MQTT ----------
+void surCommande(char* topic, byte* payload, unsigned int longueur) {
+  String msg = "";
+  for (unsigned int i = 0; i < longueur; i++) msg += (char)payload[i];
+  if (String(topic) == TOPIC_CMD) traiterCommande(msg);
+}
+
+void gererMqtt() {
+  if (mqtt.connected()) return;                       // déjà connecté : rien à faire
+  if (millis() - dernierEssaiMqtt < 5000) return;     // un essai maximum toutes les 5 s
+  dernierEssaiMqtt = millis();
+  if (WiFi.status() != WL_CONNECTED) return;          // pas encore de Wi-Fi : on attend
+
+  Serial.print("Connexion MQTT... ");
+  // LWT : si l'ESP32 disparaît sans prévenir, le broker publie "offline" à sa place
+  if (mqtt.connect("esp32_convoyeur1", MQTT_USER, MQTT_PASS,
+                   TOPIC_ETAT, 1, true, "offline")) {
+    Serial.println("OK");
+    mqtt.publish(TOPIC_ETAT, "online", true);         // retain : l'état reste visible
+    mqtt.subscribe(TOPIC_CMD, 1);                     // commandes reçues en QoS 1
+  } else {
+    Serial.printf("echec (code %d)\n", mqtt.state());
+  }
+}
+
+// ---------- Initialisation ----------
 void setup() {
   Serial.begin(115200);
   pinMode(LED_VERTE, OUTPUT);
@@ -176,10 +211,18 @@ void setup() {
     Serial.printf("Calibration : acceleration au repos = %.2f m/s2\n", gRepos);
   }
   Serial.println("Demarrage : moteur ARRETE. Tapez ON pour le demarrer, OFF pour l'arreter.");
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  mqtt.setServer(MQTT_HOST, MQTT_PORT);
+  mqtt.setCallback(surCommande);
 }
 
+// ---------- Boucle principale ----------
 void loop() {
   lireCommandeSerie();
+  gererMqtt();      // reconnexion si besoin, sans bloquer
+  mqtt.loop();      // traite les messages entrants (commandes ON/OFF)
 
   if (millis() - dernierCycle >= PERIODE_MS) {
     dernierCycle = millis();
@@ -197,6 +240,30 @@ void loop() {
     Serial.printf("T=%.1f C [%s] | V=%.2f m/s2 [%s] | %s | Moteur %s%s\n",
                   t, NOM_QUALITE[qt], v, NOM_QUALITE[qv], NOM_NIVEAU[niveauActuel],
                   relaisOn ? "EN MARCHE" : "ARRETE", arretSecurite ? " (arret de securite)" : "");
+
+    if (mqtt.connected()) {
+      seq++;
+      char buf[128];
+
+      // Un capteur muet publie null, pas "nan" (ce qui casserait le JSON)
+      if (isnan(t)) {
+        snprintf(buf, sizeof(buf), "{\"valeur\":null,\"unite\":\"C\",\"qualite\":\"%s\",\"seq\":%lu}",
+                 NOM_QUALITE[qt], seq);
+      } else {
+        snprintf(buf, sizeof(buf), "{\"valeur\":%.1f,\"unite\":\"C\",\"qualite\":\"%s\",\"seq\":%lu}",
+                 t, NOM_QUALITE[qt], seq);
+      }
+      mqtt.publish(TOPIC_TEMP, buf);
+
+      if (isnan(v)) {
+        snprintf(buf, sizeof(buf), "{\"valeur\":null,\"unite\":\"m/s2\",\"qualite\":\"%s\",\"seq\":%lu}",
+                 NOM_QUALITE[qv], seq);
+      } else {
+        snprintf(buf, sizeof(buf), "{\"valeur\":%.2f,\"unite\":\"m/s2\",\"qualite\":\"%s\",\"seq\":%lu}",
+                 v, NOM_QUALITE[qv], seq);
+      }
+      mqtt.publish(TOPIC_VIB, buf);
+    }
   }
 
   digitalWrite(PIN_RELAIS, relaisOn ? HIGH : LOW);   // une commande agit tout de suite

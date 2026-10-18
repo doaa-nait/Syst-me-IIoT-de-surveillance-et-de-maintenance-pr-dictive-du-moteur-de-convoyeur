@@ -1,9 +1,13 @@
 user esp32_convoyeur1
 topic write usine/ligne1/convoyeur1/capteur/#
 topic write usine/ligne1/convoyeur1/etat/#
-topic read usine/ligne1/convoyeur1/commande/#
+topic write usine/ligne1/convoyeur1/alerte
+topic read usine/ligne1/convoyeur1/cmd/#
 
 user nodered
-topic read usine/ligne1/convoyeur1/capteur/#
-topic read usine/ligne1/convoyeur1/etat/#
-topic write usine/ligne1/convoyeur1/commande/#
+topic read usine/#
+topic write usine/+/+/cmd/#
+
+user technicien
+topic read #
+topic read $SYS/#

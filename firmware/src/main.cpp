@@ -218,7 +218,7 @@ void setup() {
   mqtt.setCallback(surCommande);
 }
 
-// ---------- Boucle principale ----------
+
 void loop() {
   lireCommandeSerie();
   gererMqtt();      // reconnexion si besoin, sans bloquer

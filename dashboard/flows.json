@@ -8,6 +8,14 @@
         "env": []
     },
     {
+        "id": "d20c2d1f513639b6",
+        "type": "tab",
+        "label": "Flux 2",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "7b45ca8565dc1ce4",
         "type": "mqtt-broker",
         "name": "",
@@ -475,7 +483,8 @@
         "wires": [
             [
                 "6b97cb22d14a8396",
-                "165e35e34ebc28c4"
+                "165e35e34ebc28c4",
+                "95cc7e02f056d139"
             ]
         ]
     },
@@ -531,7 +540,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 800,
-        "y": 280,
+        "y": 360,
         "wires": []
     },
     {
@@ -546,13 +555,69 @@
         "overwriteFile": "false",
         "encoding": "none",
         "x": 1150,
-        "y": 220,
+        "y": 320,
         "wires": [
             []
         ]
     },
     {
-        "id": "dd153845a7823ef7",
+        "id": "95cc7e02f056d139",
+        "type": "function",
+        "z": "eb5b92fc089d4a2f",
+        "name": "Commande relais",
+        "func": "const etat = msg.payload.etat;\nif (etat === \"ALARME\") {\n    msg.payload = \"OFF\";\n} else if (etat === \"RETOUR_NORMAL\") {\n    msg.payload = \"ON\";\n} else {\n    return null;\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 810,
+        "y": 200,
+        "wires": [
+            [
+                "a76656a2eee05248",
+                "47c2afd2445bc974"
+            ]
+        ]
+    },
+    {
+        "id": "a76656a2eee05248",
+        "type": "mqtt out",
+        "z": "eb5b92fc089d4a2f",
+        "name": "",
+        "topic": "usine/ligne1/convoyeur1/cmd/relais",
+        "qos": "1",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "7b45ca8565dc1ce4",
+        "x": 1080,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "47c2afd2445bc974",
+        "type": "debug",
+        "z": "eb5b92fc089d4a2f",
+        "name": "Commandes",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1010,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "48b70fb02950efdd",
         "type": "global-config",
         "env": [],
         "modules": {

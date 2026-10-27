@@ -183,7 +183,8 @@
         "wires": [
             [
                 "ce023de42e988f14",
-                "91de6b572e230871"
+                "91de6b572e230871",
+                "3f4dcb8c4c353aac"
             ],
             [
                 "022f6ef6e862ded4"
@@ -203,8 +204,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 570,
-        "y": 160,
+        "x": 450,
+        "y": 260,
         "wires": []
     },
     {
@@ -458,7 +459,100 @@
         "wires": []
     },
     {
-        "id": "a69438ea607cd974",
+        "id": "3f4dcb8c4c353aac",
+        "type": "function",
+        "z": "eb5b92fc089d4a2f",
+        "name": "Décision",
+        "func": "// Règle de décision : moyenne mobile + hystérésis\nconst N = 5;\nconst SEUILS = {\n    temperature: { on: 70, off: 65 },\n    vibration: { on: 6, off: 5 }\n};\nconst capteur = msg.topic;\nconst s = SEUILS[capteur];\nif (!s) return null;\n\n// Moyenne mobile sur les N dernières mesures\nlet hist = flow.get('hist_' + capteur) || [];\nhist.push(msg.payload);\nif (hist.length > N) hist.shift();\nflow.set('hist_' + capteur, hist);\nif (hist.length < N) return null;   // on attend d'avoir N mesures\nconst moy = hist.reduce((a, b) => a + b, 0) / hist.length;\n\n// Hystérésis : deux seuils différents pour allumer et éteindre\nconst avant = flow.get('alarme_' + capteur) || false;\nlet apres = avant;\nif (!avant && moy > s.on) apres = true;\nelse if (avant && moy < s.off) apres = false;\nflow.set('alarme_' + capteur, apres);\n\n// On n'émet un message que lorsque l'état change\nif (apres !== avant) {\n    return {\n        topic: capteur,\n        payload: {\n            capteur: capteur,\n            etat: apres ? 'ALARME' : 'RETOUR_NORMAL',\n            moyenne: Math.round(moy * 10) / 10,\n            seuil: apres ? s.on : s.off,\n            date: new Date().toISOString()\n        }\n    };\n}\nreturn null;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 580,
+        "y": 160,
+        "wires": [
+            [
+                "6b97cb22d14a8396",
+                "165e35e34ebc28c4"
+            ]
+        ]
+    },
+    {
+        "id": "6b97cb22d14a8396",
+        "type": "debug",
+        "z": "eb5b92fc089d4a2f",
+        "name": "alertes",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 770,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "165e35e34ebc28c4",
+        "type": "function",
+        "z": "eb5b92fc089d4a2f",
+        "name": "Format journal",
+        "func": "const a = msg.payload;\nmsg.payload = a.date + \" | \" + a.capteur + \" | \" + a.etat +\n    \" | moyenne=\" + a.moyenne + \" | seuil=\" + a.seuil;\nmsg.filename = \"/Users/macbookprom2/Syst-me-IIoT-de-surveillance-et-de-maintenance-pr-dictive-du-moteur-de-convoyeur/data/alertes.log\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 580,
+        "y": 220,
+        "wires": [
+            [
+                "d640db3f9e3aaae8",
+                "51ad67a343da66a9"
+            ]
+        ]
+    },
+    {
+        "id": "d640db3f9e3aaae8",
+        "type": "debug",
+        "z": "eb5b92fc089d4a2f",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 800,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "51ad67a343da66a9",
+        "type": "file",
+        "z": "eb5b92fc089d4a2f",
+        "name": "",
+        "filename": "/Users/macbookprom2/vs code/Syst-me-IIoT-de-surveillance-et-de-maintenance-pr-dictive-du-moteur-de-convoyeur/data/alertes.log",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 1150,
+        "y": 220,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c982d59bdc549305",
         "type": "global-config",
         "env": [],
         "modules": {

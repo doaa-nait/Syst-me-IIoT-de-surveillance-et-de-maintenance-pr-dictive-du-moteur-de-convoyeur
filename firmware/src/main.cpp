@@ -218,7 +218,7 @@ void setup() {
   mqtt.setCallback(surCommande);
 }
 
-// ---------- Boucle principale ----------
+
 void loop() {
   lireCommandeSerie();
   gererMqtt();      // reconnexion si besoin, sans bloquer
@@ -266,5 +266,4 @@ void loop() {
     }
   }
 
-  digitalWrite(PIN_RELAIS, relaisOn ? HIGH : LOW);   // une commande agit tout de suite
-}
+  digitalWrite(PIN_RELAIS, relaisOn ? HIGH : LOW);   

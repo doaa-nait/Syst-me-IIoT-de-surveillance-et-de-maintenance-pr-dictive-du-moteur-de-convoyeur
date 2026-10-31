@@ -56,6 +56,7 @@ bool   mesuresFiables = false;   // les deux capteurs donnent-ils une valeur OK 
 bool   buzzerActif = false;
 Niveau niveauActuel = N_NORMAL;
 String ligneSerie = "";
+bool   coupureWifi = false;      // vrai quand l'interrupteur simule une panne réseau
 
 float normeAcceleration() {
   sensors_event_t a, g, t;
@@ -218,9 +219,22 @@ void setup() {
   mqtt.setCallback(surCommande);
 }
 
-
+// ---------- Boucle principale ----------
 void loop() {
   lireCommandeSerie();
+
+  // Interrupteur GPIO 33 : simule une coupure du Wi-Fi
+  bool boutonAppuye = (digitalRead(PIN_INTER) == LOW);   // INPUT_PULLUP : appuyé = LOW
+  if (boutonAppuye && !coupureWifi) {
+    coupureWifi = true;
+    WiFi.disconnect();
+    Serial.println(">>> Coupure Wi-Fi simulee");
+  } else if (!boutonAppuye && coupureWifi) {
+    coupureWifi = false;
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    Serial.println(">>> Wi-Fi retabli");
+  }
+
   gererMqtt();      // reconnexion si besoin, sans bloquer
   mqtt.loop();      // traite les messages entrants (commandes ON/OFF)
 
@@ -266,4 +280,5 @@ void loop() {
     }
   }
 
-  digitalWrite(PIN_RELAIS, relaisOn ? HIGH : LOW);   
+  digitalWrite(PIN_RELAIS, relaisOn ? HIGH : LOW);   // une commande agit tout de suite
+}

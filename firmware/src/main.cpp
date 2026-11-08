@@ -75,13 +75,13 @@ void autotestActionneurs() {
 
 // ---------- 1. Validation des mesures ----------
 Qualite validerTemperature(float t) {
-  if (isnan(t)) return Q_DECONNECTE;                  // le DHT22 ne répond pas
-  if (t < T_MIN || t > T_MAX) return Q_HORS_PLAGE;    // physiquement impossible
+  if (isnan(t)) return Q_DECONNECTE;                  
+  if (t < T_MIN || t > T_MAX) return Q_HORS_PLAGE;    
   if (!premiereTemp && fabs(t - derniereTempValide) > SAUT_MAX_T) {
     nbSautsConsecutifs++;
-    if (nbSautsConsecutifs < CONFIRMATIONS) return Q_PIC;   // saut pas encore confirmé
+    if (nbSautsConsecutifs < CONFIRMATIONS) return Q_PIC;   
   }
-  nbSautsConsecutifs = 0;                             // valeur acceptée
+  nbSautsConsecutifs = 0;                             
   premiereTemp = false;
   derniereTempValide = t;
   return Q_OK;

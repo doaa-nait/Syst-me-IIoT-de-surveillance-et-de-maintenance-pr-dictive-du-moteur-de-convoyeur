@@ -6,3 +6,19 @@
 
 2026-10-31T21:25:08.953Z | temperature | RETOUR_NORMAL | moyenne=62.8 | seuil=65
 
+2026-11-07T12:07:46.814Z | temperature | ALARME | moyenne=70.4 | seuil=70
+
+2026-11-07T12:12:11.432Z | temperature | RETOUR_NORMAL | moyenne=64.9 | seuil=65
+
+2026-11-07T12:53:21.243Z | temperature | ALARME | moyenne=72.8 | seuil=70
+
+2026-11-07T12:54:15.298Z | temperature | RETOUR_NORMAL | moyenne=60.2 | seuil=65
+
+2026-11-07T18:49:28.656Z | temperature | ALARME | moyenne=70.4 | seuil=70
+
+2026-11-07T18:52:23.379Z | temperature | RETOUR_NORMAL | moyenne=57.6 | seuil=65
+
+2026-11-07T19:04:22.808Z | temperature | ALARME | moyenne=72.5 | seuil=70
+
+2026-11-07T19:05:07.418Z | temperature | RETOUR_NORMAL | moyenne=60.6 | seuil=65
+
